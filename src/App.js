@@ -15,4 +15,20 @@ function App(){ //sets empty arrays for artist,
         setLoading(false);//not loading anymore, stop loading screen
       });
   }, []);//runs effect only one time 
+return (
+  <div>
+    <h1>Welcome To Wesley's Spotify Listening Stats!!!</h1>
+
+      {loading ?(
+        <p>trying to load some stats....</p>
+      ):(
+        <ul>
+          {artists.map((artist)=>(
+            <li key= {artist}>{artist}</li>
+          ))}
+          </ul>
+          )}
+  </div>
+);
 }
+export default App;
