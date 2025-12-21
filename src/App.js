@@ -1,4 +1,4 @@
-import {useState, useEffect} from react; //importing useState, which stores data and useEffect which loads data
+import {useState, useEffect} from "react"; //importing useState, which stores data and useEffect which loads data
 
 function App(){ //sets empty arrays for artist, 
   const[artists, setArtists]=useState([]); 
