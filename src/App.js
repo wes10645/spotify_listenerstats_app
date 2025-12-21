@@ -13,7 +13,12 @@ function App(){ //sets empty arrays for artist,
         setError(null);
 
         const response = await fetch(
-        "https://jsonplaceholder.typicode.com/users"
+        "https://api.spotify.com/v1/me/top/artists",
+        {
+          headers:{
+            Authorization: 'Bearer ${accessToken}',
+          },
+        }
         );
         if (!response.ok){
           throw new Error ("failed to fetch your stats:(");
