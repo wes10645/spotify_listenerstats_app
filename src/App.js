@@ -6,9 +6,12 @@ function App(){ //sets empty arrays for artist,
   const[error, setError] = useState(null);
 
 
-  useEffect(()=>{
+
     async function fetchArtists() {
       try{
+        setLoading(true);
+        setError(null);
+
         const response = await fetch(
         "https://jsonplaceholder.typicode.com/users"
         );
@@ -25,7 +28,7 @@ function App(){ //sets empty arrays for artist,
       setLoading(false);
     }
     }
-
+    useEffect(()=>{
     fetchArtists();
   },[]);
 return (
@@ -34,8 +37,13 @@ return (
 
       {loading&&<p>trying to load some stats...</p>}
 
-      {error&&<p style = {{color: "red"}}>{error}</p>}
-         
+      {error&& (
+        <div>
+        <p style = {{color: "red"}}>{error}</p>
+        <button onClick={fetchArtists}>Retry</button>
+         </div>
+      )};
+
          {!loading &&!error&&(
           <ul>
           {artists.map((artist) => (
