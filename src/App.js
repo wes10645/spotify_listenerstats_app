@@ -14,8 +14,28 @@ function App(){ //sets empty arrays for artist,
   const[artists, setArtists]=useState([]); 
   const[loading, setLoading]=useState(true); //sets state for of waiting for data
   const[error, setError] = useState(null);
+  const [accessToken, setAccessToken] = useState("");
+  //access token created and added
 
+    useEffect(() => {
+  const hash = window.location.hash;
+  let token = window.localStorage.getItem("token");
 
+  if (!token && hash) {
+    token = hash
+      .substring(1)
+      .split("&")
+      .find((elem) => elem.startsWith("access_token"))
+      .split("=")[1];
+
+    window.location.hash = "";
+    window.localStorage.setItem("token", token);
+  }
+
+  if (token) {
+    setAccessToken(token);
+  }
+}, []);
 
     async function fetchArtists() {
       try{
