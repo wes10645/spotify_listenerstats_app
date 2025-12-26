@@ -1,5 +1,15 @@
 import {useState, useEffect} from "react"; //importing useState, which stores data and useEffect which loads data
 
+
+
+
+//im starting to implement the authorization for spotify 
+const CLIENT_ID = "PASTE_YOUR_CLIENT_ID_HERE";
+const REDIRECT_URI = "http://127.0.0.1:3000";
+const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize";
+const RESPONSE_TYPE = "token";
+const SCOPES = ["user-top-read"];
+
 function App(){ //sets empty arrays for artist, 
   const[artists, setArtists]=useState([]); 
   const[loading, setLoading]=useState(true); //sets state for of waiting for data
@@ -16,7 +26,7 @@ function App(){ //sets empty arrays for artist,
         "https://api.spotify.com/v1/me/top/artists",
         {
           headers:{
-            Authorization: 'Bearer ${accessToken}',
+            Authorization: 'Bearer ${accessToken}', 
           },
         }
         );
