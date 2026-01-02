@@ -7,8 +7,32 @@ import {useState, useEffect} from "react"; //importing useState, which stores da
 const CLIENT_ID = "f7ad09fd2de94e8cb33658dd53dafd3d"; //pasted the client id
 const REDIRECT_URI = "http://127.0.0.1:3000";
 const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize";
-const RESPONSE_TYPE = "token";
 const SCOPES = ["user-top-read"];
+
+function generateRandom(length) {
+  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let text = "";
+  for (let i = 0; i < length; i++) text += possible.charAt(Math.floor(Math.random() * possible.length));
+  return text;
+}
+async function sha256(plain) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plain);
+  return await window.crypto.subtle.digest("SHA-256", data);
+}
+
+function base64urlencode(a) {
+  return btoa(String.fromCharCode(...new Uint8Array(a)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+async function generateCodeChallenge(verifier) {
+  const hashed = await sha256(verifier);
+  return base64urlencode(hashed);
+}
+
 
 function App(){ //sets empty arrays for artist, 
   const[artists, setArtists]=useState([]); 
