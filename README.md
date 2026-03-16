@@ -1,24 +1,19 @@
-# Spotify Analytics Platform
+Spotify Analytics Platform
 
-A full-stack web application that provides advanced analytics and insights into personal Spotify listening behavior.
+A full-stack web application that provides advanced analytics and insights into personal Spotify listening behavior. ADDING NEW FUNCTIONALITY FOR DATA TRENDS AND ANALYZING TOP CHARTS. IN DEVELOPMENT. 
 
-This platform integrates the **Spotify Web API** with **OAuth 2.0 authentication** to analyze listening trends, genre distribution, track metrics, and long-term user behavior patterns.
 
-> **Currently in Active Development**
 
----
-
-##  Tech Stack
-
-- **Frontend:** React  
-- **Backend:** Node.js, Express  
-- **Authentication:** OAuth 2.0 (Spotify Web API)  
-- **API Handling:** REST APIs, Asynchronous Requests  
-- **State Management:** React Hooks / Context API  
+Full Tech Stack:
+- Frontend: React  
+- Backend: Node.js, Express  
+- Authentication: OAuth 2.0 (Spotify Web API)  
+- API Handling:  REST APIs, Asynchronous Requests  
+- State Management: React Hooks / Context API  
 
 ---
 
-## Core Features (Implemented)
+Core Features (Implemented):
 
 - Spotify OAuth authentication flow  
 - Secure access token management  
@@ -27,28 +22,23 @@ This platform integrates the **Spotify Web API** with **OAuth 2.0 authentication
 - Dynamic UI rendering based on API responses  
 
 ---
-
-## In Development
+Currently Developing:
 
 - Advanced listening trend visualizations  
 - Genre evolution analytics  
 - Track-level audio feature comparison  
 - Listening pattern forecasting modules  
-- Performance optimization and scalable API handling  
+- Performance optimization and scalable API handling
+- Macro Trend analytics   
 
----
 
-## Project Vision
 
-The goal of this platform is to evolve beyond a simple dashboard into a scalable analytics engine capable of generating personalized listening insights and behavioral trend analysis.
+Project Goal:
 
-Future development may include predictive modeling, comparative user analytics, and exportable data reports.
+The goal of this platform is to evolve beyond a simple dashboard into a scalable analytics engine capable of generating personalized listening insights and behavioral trend analysis on a macro level as well. 
 
----
-
-## Installation & Local Setup
 
 Clone the repository:
 
-```bash
+bash
 git clone https://github.com/yourusername/spotify-analytics-platform.git
