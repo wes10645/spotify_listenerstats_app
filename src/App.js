@@ -161,7 +161,11 @@ function App() {
       {error && (
         <div>
           <p style={{ color: "red" }}>{error}</p>
-          <button onClick={fetchArtists}>Retry</button>
+          {error === "PKCE verifier missing — please log in again." ? (
+            <button onClick={handleLogin}>Log in again</button>
+          ) : (
+            <button onClick={fetchArtists}>Retry</button>
+          )}
         </div>
       )}
 
