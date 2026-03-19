@@ -9,7 +9,8 @@ Full Tech Stack:
 - Backend: Node.js, Express  
 - Authentication: OAuth 2.0 (Spotify Web API)  
 - API Handling:  REST APIs, Asynchronous Requests  
-- State Management: React Hooks / Context API  
+- State Management: React Hooks / Context API
+- UI animations: P5.js
 
 ---
 
@@ -19,7 +20,7 @@ Core Features (Implemented):
 - Secure access token management  
 - Retrieval of user profile data  
 - Listening history integration  
-- Dynamic UI rendering based on API responses  
+- Dynamic UI rendering based on API responses and Mouse Clicks  
 
 ---
 Currently Developing:
@@ -29,7 +30,8 @@ Currently Developing:
 - Track-level audio feature comparison  
 - Listening pattern forecasting modules  
 - Performance optimization and scalable API handling
-- Macro Trend analytics   
+- Macro Trend analytics
+- UI for Landing Page
 
 
 
