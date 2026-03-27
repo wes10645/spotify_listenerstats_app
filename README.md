@@ -1,7 +1,7 @@
 Spotify Analytics Platform
 
 A full-stack web application that provides advanced analytics and insights into personal Spotify listening behavior. ADDING NEW FUNCTIONALITY FOR DATA TRENDS AND ANALYZING TOP CHARTS. IN DEVELOPMENT. 
-
+Link to WIP deployment :https://spotify-listenerstats-cuq70ssac-wes10645s-projects.vercel.app/
 
 
 Full Tech Stack:
