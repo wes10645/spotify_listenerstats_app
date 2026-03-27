@@ -4,8 +4,12 @@ import LandingPage from "./LandingPage";
 
 
 
-// im starting to implement the authorization for spotify
-const CLIENT_ID = "f7ad09fd2de94e8cb33658dd53dafd3d"; // pasted the client id
+// Spotify public client id: set REACT_APP_SPOTIFY_CLIENT_ID on Vercel (Production/Preview). Dev falls back below.
+const CLIENT_ID =
+  (process.env.REACT_APP_SPOTIFY_CLIENT_ID || "").trim() ||
+  (process.env.NODE_ENV === "production"
+    ? ""
+    : "f7ad09fd2de94e8cb33658dd53dafd3d");
 const REDIRECT_URI = window.location.origin;
 const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize";
 // changing this for the new spotify authorization
@@ -345,6 +349,12 @@ function App() {
   }, [accessToken, fetchWindowStats]);
 
   async function handleLogin() {
+    if (!CLIENT_ID) {
+      window.alert(
+        "Missing REACT_APP_SPOTIFY_CLIENT_ID. In Vercel: Project → Settings → Environment Variables → add it for Production (and Preview), then redeploy."
+      );
+      return;
+    }
     const verifier = generateRandom(128);
     const challenge = await generateCodeChallenge(verifier);
     localStorage.setItem("pkce_verifier", verifier);
