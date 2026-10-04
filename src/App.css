@@ -40,30 +40,37 @@ body {
   inset: 0;
 }
 
-.landing-card {
+.landing-content {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) scale(0.96);
+  transform: translate(-50%, -50%);
   z-index: 10;
-  width: min(440px, calc(100vw - 32px));
-  box-sizing: border-box;
-  padding: 40px 32px 36px;
+  width: calc(100vw - 32px);
   text-align: center;
-  border: 1px solid rgba(29, 185, 84, 0.45);
-  border-radius: 28px;
-  background: rgba(8, 8, 8, 0.72);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 0 60px rgba(29, 185, 84, 0.18);
-  opacity: 0;
-  pointer-events: none; /* can't click the button until the card has appeared */
-  transition: opacity 700ms ease, transform 700ms ease;
+  pointer-events: none; /* let the mouse reach the molds; the button turns it back on */
 }
 
-.landing-card.visible {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translate(-50%, -50%) scale(1);
+/* The molds draw the title, so the real text is invisible (but still read by screen readers) */
+.brand.landing-title {
+  display: inline-block;
+  font-size: clamp(3.5rem, 13vw, 6.5rem);
+  color: transparent;
+  text-shadow: none;
+}
+
+/* Zero-size marker the browser places on the title's text baseline (used to line up the molds) */
+.baseline-probe {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  vertical-align: baseline;
+}
+
+/* No animation (reduced motion, or it failed): show the plain text title */
+.brand.landing-title.static {
+  color: #1db954;
+  text-shadow: 0 0 24px rgba(29, 185, 84, 0.45);
 }
 
 .brand {
@@ -77,9 +84,15 @@ body {
 }
 
 .tagline {
-  margin: 12px 0 28px;
+  margin: 8px 0 24px;
   color: #b3b3b3;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+
+.tagline.visible {
+  opacity: 1;
 }
 
 .login-button {
@@ -92,7 +105,14 @@ body {
   font-size: 1.05rem;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 150ms ease, background 150ms ease;
+  opacity: 0;
+  pointer-events: none; /* can't click it until it has appeared */
+  transition: opacity 700ms ease, transform 150ms ease, background 150ms ease;
+}
+
+.login-button.visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .login-button:hover {

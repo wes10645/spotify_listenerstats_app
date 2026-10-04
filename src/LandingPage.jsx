@@ -3,23 +3,61 @@ import p5 from "p5";
 
 // How the intro plays:
 //   spread  -> molds burst out from the center, fast at first, then slowing to normal speed
-//   gather  -> molds fly to the edge of the Spotiboard card and trace its outline
-//   roam    -> the card fades in, molds burst off its edges and go back to normal slime behavior
+//   gather  -> every mold flies to a point inside the letters of "Spotiboard"
+//   roam    -> some molds stay on the letters (so the molds ARE the title), the rest burst
+//              outward and go back to normal slime behavior. The tagline shows for 2s and
+//              fades; the login button fades in.
 // Clicking "Log in with Spotify" still makes every mold swirl into the button before logging in.
 const SPREAD_MS = 900; // how long the burst lasts before molds start gathering
-const GATHER_MAX_MS = 1400; // show the card after this long even if not every mold has arrived
+const GATHER_MAX_MS = 1400; // release molds after this long even if not every one has arrived
+const TAGLINE_MS = 2000; // how long the tagline stays before fading out
+const TITLE = "Spotiboard";
+
+// Finds the pixels covered by the title's letters. Draws the word on a hidden canvas
+// in the same font as the (invisible) <h1>, lined up on the h1's real text baseline,
+// then keeps every 2nd pixel that has ink.
+// baselineEl is a zero-size marker inside the h1: the browser places it exactly on the baseline.
+function letterPoints(titleEl, baselineEl) {
+  const rect = titleEl.getBoundingClientRect();
+  const baselineY = baselineEl.getBoundingClientRect().bottom;
+  const style = window.getComputedStyle(titleEl);
+  const pad = Math.ceil(rect.height / 2); // extra room above and below so tall letters aren't clipped
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(rect.width);
+  canvas.height = Math.ceil(rect.height) + 2 * pad;
+  const ctx = canvas.getContext("2d");
+  ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  ctx.letterSpacing = style.letterSpacing;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#fff";
+  const canvasTop = rect.top - pad;
+  ctx.fillText(TITLE, canvas.width / 2, baselineY - canvasTop);
+
+  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const points = [];
+  for (let y = 0; y < canvas.height; y += 2) {
+    for (let x = 0; x < canvas.width; x += 2) {
+      if (data[(y * canvas.width + x) * 4 + 3] > 128) points.push({ x: rect.left + x, y: canvasTop + y });
+    }
+  }
+  return points;
+}
 
 export default function LandingPage({ onLogin }) {
   const sketchRef = useRef(null);
   const p5Ref = useRef(null);
-  const cardRef = useRef(null);
+  const titleRef = useRef(null);
+  const baselineRef = useRef(null);
   const buttonRef = useRef(null);
   const btnXRef = useRef(0);
   const btnYRef = useRef(0);
   const convergingRef = useRef(false);
   const loginCalledRef = useRef(false);
   const [buttonVisible, setButtonVisible] = useState(true);
-  const [cardVisible, setCardVisible] = useState(false);
+  const [revealed, setRevealed] = useState(false); // login button shown
+  const [taglineVisible, setTaglineVisible] = useState(false);
+  const [staticTitle, setStaticTitle] = useState(false); // plain text title when there's no animation
 
   function handleButtonClick() {
     if (convergingRef.current) return;
@@ -43,10 +81,36 @@ export default function LandingPage({ onLogin }) {
   }
 
   useEffect(() => {
-    // People who turn off animations in their OS settings get the card right away
+    const timers = [];
+    const later = (fn, ms) => timers.push(window.setTimeout(fn, ms));
+
+    // Shows the tagline briefly and the login button for good. Runs once.
+    let didReveal = false;
+    function reveal() {
+      if (didReveal) return;
+      didReveal = true;
+      setRevealed(true);
+      setTaglineVisible(true);
+      later(() => setTaglineVisible(false), TAGLINE_MS);
+    }
+
+    // People who turn off animations in their OS settings get a plain title right away
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    // Safety net: show the card even if the animation can't run
-    const fallback = window.setTimeout(() => setCardVisible(true), reduceMotion ? 0 : 3000);
+    if (reduceMotion) {
+      setStaticTitle(true);
+      reveal();
+    }
+    // Safety net: if the animation can't run, show a plain title and the button anyway
+    later(() => {
+      if (!didReveal) {
+        setStaticTitle(true);
+        reveal();
+      }
+    }, 4000);
+
+    // The canvas needs the Baloo 2 font loaded before it can draw letters in it
+    let fontReady = !document.fonts;
+    document.fonts?.load(`800 64px "Baloo 2"`).finally(() => (fontReady = true));
 
     const sketch = (p) => {
       let molds = [];
@@ -54,20 +118,7 @@ export default function LandingPage({ onLogin }) {
       let d;
       let phase = reduceMotion ? "roam" : "spread";
       let phaseStart = 0;
-      let card = null; // { x, y, w, h } of the card, read from the page when gathering starts
-
-      // A random point on the card's outline, so molds spread evenly around its border
-      function pointOnCardEdge() {
-        const { x, y, w, h } = card;
-        let t = p.random(2 * (w + h));
-        if (t < w) return { x: x + t, y };
-        t -= w;
-        if (t < h) return { x: x + w, y: y + t };
-        t -= h;
-        if (t < w) return { x: x + w - t, y: y + h };
-        t -= w;
-        return { x, y: y + h - t };
-      }
+      let titleCenter = null;
 
       class Mold {
         constructor(x, y, speed = 1) {
@@ -84,7 +135,8 @@ export default function LandingPage({ onLogin }) {
           this.sensorAngle = 25;
           this.sensorDist = 20;
           this.speed = speed;
-          this.target = null; // where this mold sits on the card outline while gathering
+          this.target = null; // a point inside a letter
+          this.pinned = false; // true = this mold stays on the letters after the intro
         }
 
         update() {
@@ -115,6 +167,17 @@ export default function LandingPage({ onLogin }) {
             // ease 10% of the remaining distance each frame, with a little wobble so it looks alive
             this.x += (this.target.x - this.x) * 0.1 + p.random(-0.6, 0.6);
             this.y += (this.target.y - this.y) * 0.1 + p.random(-0.6, 0.6);
+          } else if (this.pinned) {
+            // letters: spring back to its spot, but the mouse can scatter them a little
+            const dx = this.x - p.mouseX;
+            const dy = this.y - p.mouseY;
+            const distToMouse = p.sqrt(dx * dx + dy * dy);
+            if (distToMouse < 50 && distToMouse > 0.0001) {
+              this.x += (dx / distToMouse) * 4;
+              this.y += (dy / distToMouse) * 4;
+            }
+            this.x += (this.target.x - this.x) * 0.15 + p.random(-0.4, 0.4);
+            this.y += (this.target.y - this.y) * 0.15 + p.random(-0.4, 0.4);
           } else {
             // normal behavior; speed starts high during the burst and settles back to 1
             this.speed = p.max(1, this.speed * 0.985);
@@ -178,6 +241,8 @@ export default function LandingPage({ onLogin }) {
             const dist = p.sqrt(dx * dx + dy * dy);
             const brightness = p.map(dist, 0, 300, 255, 150);
             p.fill(29, brightness, 84);
+          } else if (this.pinned && phase === "roam") {
+            p.fill(30, 215, 96); // letters a bit brighter than the slime around them
           } else {
             p.fill(29, 185, 84);
           }
@@ -192,27 +257,40 @@ export default function LandingPage({ onLogin }) {
         }
       }
 
+      // Gives each mold a spot in the letters. The first molds (up to ~3 per spot) stay as the title.
+      function assignLetterTargets() {
+        const points = titleRef.current ? letterPoints(titleRef.current, baselineRef.current) : [];
+        if (points.length === 0) return false;
+        const rect = titleRef.current.getBoundingClientRect();
+        titleCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        const pinnedCount = Math.min(molds.length * 0.6, points.length * 3);
+        molds.forEach((m, i) => {
+          m.target = points[i % points.length];
+          m.pinned = i < pinnedCount;
+        });
+        return true;
+      }
+
       function startGather() {
-        const rect = cardRef.current?.getBoundingClientRect();
-        if (!rect) return startRoam();
-        card = { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
-        for (const m of molds) m.target = pointOnCardEdge();
+        if (!assignLetterTargets()) {
+          setStaticTitle(true);
+          return startRoam();
+        }
         phase = "gather";
         phaseStart = p.millis();
       }
 
       function startRoam() {
-        // burst off the card's edges, pointing away from its center
-        if (card) {
-          const cx = card.x + card.w / 2;
-          const cy = card.y + card.h / 2;
+        // the molds that aren't part of the title burst outward from it
+        if (titleCenter) {
           for (const m of molds) {
-            m.heading = p.degrees(p.atan2(m.y - cy, m.x - cx)) + p.random(-20, 20);
+            if (m.pinned) continue;
+            m.heading = p.degrees(p.atan2(m.y - titleCenter.y, m.x - titleCenter.x)) + p.random(-20, 20);
             m.speed = p.random(2, 4);
           }
         }
         phase = "roam";
-        setCardVisible(true);
+        reveal();
       }
 
       p.setup = () => {
@@ -226,16 +304,18 @@ export default function LandingPage({ onLogin }) {
       };
 
       p.draw = () => {
-        // more fade while gathering so the card outline reads clearly; long trails otherwise
+        // more fade while gathering so the letters read clearly; long trails otherwise
         p.background(0, convergingRef.current ? 8 : phase === "gather" ? 24 : 2);
         if (!convergingRef.current && phase !== "gather") p.loadPixels();
 
-        if (phase === "spread" && p.millis() - phaseStart > SPREAD_MS) {
+        const elapsed = p.millis() - phaseStart;
+        // wait for the font (up to 2s) so the letters come out in Baloo 2
+        if (phase === "spread" && elapsed > SPREAD_MS && (fontReady || elapsed > 2000)) {
           startGather();
         } else if (phase === "gather") {
           const done = p.frameCount % 10 === 0 &&
             molds.filter((m) => p.abs(m.target.x - m.x) + p.abs(m.target.y - m.y) < 6).length > molds.length * 0.8;
-          if (done || p.millis() - phaseStart > GATHER_MAX_MS) startRoam();
+          if (done || elapsed > GATHER_MAX_MS) startRoam();
         }
 
         for (let i = 0; i < molds.length; i++) {
@@ -290,7 +370,8 @@ export default function LandingPage({ onLogin }) {
             new Mold(p.mouseX + p.random(-20, 20), p.mouseY + p.random(-20, 20))
           );
         }
-        if (molds.length > num + 2000) molds.splice(0, 30);
+        // trim the oldest free-roaming molds, never the ones forming the letters
+        if (molds.length > num + 2000) molds.splice(molds.findIndex((m) => !m.pinned), 30);
       };
 
       p.mouseClicked = () => {
@@ -303,16 +384,24 @@ export default function LandingPage({ onLogin }) {
           m.heading = p.random(360);
           molds.push(m);
         }
-        if (molds.length > num + 2000) molds.splice(0, 200);
+        if (molds.length > num + 2000) molds.splice(molds.findIndex((m) => !m.pinned), 200);
       };
 
-      p.windowResized = () => p.resizeCanvas(p.windowWidth, p.windowHeight);
+      p.windowResized = () => {
+        p.resizeCanvas(p.windowWidth, p.windowHeight);
+        // the title moved, so move the letter molds with it
+        if (phase === "roam" && molds.some((m) => m.pinned)) {
+          const points = letterPoints(titleRef.current, baselineRef.current);
+          let i = 0;
+          for (const m of molds) if (m.pinned) m.target = points[i++ % points.length];
+        }
+      };
     };
 
     const p5Instance = new p5(sketch, sketchRef.current);
     p5Ref.current = p5Instance;
     return () => {
-      window.clearTimeout(fallback);
+      timers.forEach((t) => window.clearTimeout(t));
       p5Instance.remove();
     };
   }, [onLogin]);
@@ -320,11 +409,19 @@ export default function LandingPage({ onLogin }) {
   return (
     <div className="landing">
       <div ref={sketchRef} className="landing-canvas" />
-      <div ref={cardRef} className={cardVisible ? "landing-card visible" : "landing-card"}>
-        <h1 className="brand">Spotiboard</h1>
-        <p className="tagline">Your Spotify listening, visualized.</p>
+      <div className="landing-content">
+        {/* Invisible while the molds draw the letters; screen readers still read it */}
+        <h1 ref={titleRef} className={staticTitle ? "brand landing-title static" : "brand landing-title"}>
+          {TITLE}
+          <span ref={baselineRef} className="baseline-probe" aria-hidden="true" />
+        </h1>
+        <p className={taglineVisible ? "tagline visible" : "tagline"}>Your Spotify listening, visualized.</p>
         {buttonVisible && (
-          <button ref={buttonRef} className="login-button" onClick={handleButtonClick}>
+          <button
+            ref={buttonRef}
+            className={revealed ? "login-button visible" : "login-button"}
+            onClick={handleButtonClick}
+          >
             Log in with Spotify
           </button>
         )}
