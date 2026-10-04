@@ -1,3 +1,8 @@
+body {
+  background: #000;
+  color: #fff;
+}
+
 .page {
   max-width: 960px;
   margin: 0 auto;
@@ -17,7 +22,7 @@
   padding: 8px 16px;
   border: 1px solid #1db954;
   border-radius: 999px;
-  background: white;
+  background: transparent;
   color: #1db954;
   font: inherit;
   text-decoration: none;
@@ -27,7 +32,7 @@
 .button.active,
 .button:hover {
   background: #1db954;
-  color: white;
+  color: #000;
 }
 
 .ranges {
@@ -38,7 +43,19 @@
 }
 
 .error {
-  color: red;
+  color: #ff6b6b;
+}
+
+.error.banner {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  margin: 0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.8);
 }
 
 .charts {
@@ -67,7 +84,7 @@
 }
 
 .bar-track {
-  background: #eee;
+  background: #222;
   border-radius: 4px;
 }
 
@@ -82,5 +99,5 @@
 }
 
 .empty {
-  color: #888;
+  color: #aaa;
 }
