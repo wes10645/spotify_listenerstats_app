@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"; // useState stores data, useEffect loads data
 import { BACKEND_URL, NotLoggedInError, getJson, logout } from "./api";
 import BarChart from "./components/BarChart";
+import LandingPage from "./LandingPage";
 import "./App.css";
 
 // Spotify's three windows for "top" items
@@ -9,6 +10,12 @@ const RANGES = [
   { value: "medium_term", label: "Last 6 months" },
   { value: "long_term", label: "Last year" },
 ];
+
+// Defined outside App so it never changes; LandingPage restarts its animation if onLogin changes.
+// Full page redirect: the backend sends us on to Spotify's login page.
+function goToLogin() {
+  window.location.href = `${BACKEND_URL}/auth/login`;
+}
 
 function App() {
   const [user, setUser] = useState(null);
@@ -66,13 +73,14 @@ function App() {
   if (loggedIn === null) return <p className="page">checking login...</p>;
 
   if (!loggedIn) {
+    const loginFailed = new URLSearchParams(window.location.search).get("error") === "login_failed";
     return (
-      <div className="page">
-        <h1>Welcome To Wesley&apos;s Spotify Listening Stats!!!</h1>
-        {error && <p className="error">{error}</p>}
-        {/* full page redirect: the backend sends us to Spotify's login page */}
-        <a className="button" href={`${BACKEND_URL}/auth/login`}>Log in with Spotify</a>
-      </div>
+      <>
+        {(error || loginFailed) && (
+          <p className="error banner">{error || "Spotify login didn't work, please try again."}</p>
+        )}
+        <LandingPage onLogin={goToLogin} />
+      </>
     );
   }
 

@@ -1,4 +1,10 @@
 import { render, screen } from "@testing-library/react";
+
+// p5 needs a real canvas, which the test environment doesn't have.
+// A plain function (not jest.fn) because CRA resets jest.fn mocks before each test.
+jest.mock("p5", () => function FakeP5() {
+  return { remove() {} };
+});
 import App from "./App";
 import BarChart from "./components/BarChart";
 
