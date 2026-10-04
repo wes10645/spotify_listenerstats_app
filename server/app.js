@@ -129,7 +129,7 @@ app.get("/api/genres", requireSession, route(async (req) => {
 
 app.get("/api/listening-hours", requireSession, route(async (req) => {
   const data = await cachedGet(req, "/me/player/recently-played?limit=50");
-  return listensByHour(data.items.map((item) => item.played_at));
+  return listensByHour(data.items.map((item) => item.played_at), req.query.tz);
 }));
 
 app.get("/api/cache-stats", (req, res) => res.json(cache.stats()));

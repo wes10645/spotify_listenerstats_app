@@ -4,6 +4,9 @@ import BarChart from "./components/BarChart";
 import LandingPage from "./LandingPage";
 import "./App.css";
 
+// The listener's time zone, e.g. "America/New_York", so "when you listen" uses their clock
+const TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 // Spotify's three windows for "top" items
 const RANGES = [
   { value: "short_term", label: "Last 4 weeks" },
@@ -47,7 +50,7 @@ function App() {
         getJson(`/api/top-artists?range=${selectedRange}`),
         getJson(`/api/top-tracks?range=${selectedRange}`),
         getJson(`/api/genres?range=${selectedRange}`),
-        getJson("/api/listening-hours"),
+        getJson(`/api/listening-hours?tz=${encodeURIComponent(TIME_ZONE)}`),
       ]);
       setStats({ artists, tracks, genres, hours });
     } catch (err) {
