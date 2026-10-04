@@ -33,11 +33,21 @@ test("countGenres counts and sorts genres across artists", () => {
 });
 
 test("listensByHour puts each play in its hour bucket", () => {
-  const at = (hour) => new Date(2026, 0, 1, hour, 30).toISOString();
-  const buckets = listensByHour([at(9), at(9), at(22)]);
+  const buckets = listensByHour(["2026-01-01T09:30:00Z", "2026-01-01T09:45:00Z", "2026-01-01T22:10:00Z"], "UTC");
   assert.strictEqual(buckets.length, 24);
   assert.strictEqual(buckets[9].value, 2);
   assert.strictEqual(buckets[22].value, 1);
+});
+
+test("listensByHour uses the listener's time zone", () => {
+  // 02:00 UTC on Jan 1 is 9pm the previous evening in New York (UTC-5 in winter)
+  const buckets = listensByHour(["2026-01-01T02:00:00Z"], "America/New_York");
+  assert.strictEqual(buckets[21].value, 1);
+});
+
+test("listensByHour falls back to UTC for an unknown time zone", () => {
+  const buckets = listensByHour(["2026-01-01T02:00:00Z"], "Not/AZone");
+  assert.strictEqual(buckets[2].value, 1);
 });
 
 test("toTokens keeps the old refresh token when Spotify doesn't send a new one", () => {
@@ -57,4 +67,11 @@ test("a tampered or missing cookie is rejected", () => {
   const tampered = sealed.slice(0, -2) + (sealed.endsWith("A") ? "BB" : "AA");
   assert.strictEqual(unseal(tampered), null);
   assert.strictEqual(unseal(undefined), null);
+});
+
+test("cache can delete a key", () => {
+  const cache = new TtlCache(1000);
+  cache.set("a", 1);
+  cache.delete("a");
+  assert.strictEqual(cache.get("a"), undefined);
 });

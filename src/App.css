@@ -7,7 +7,6 @@ body {
   max-width: 960px;
   margin: 0 auto;
   padding: 24px 16px;
-  font-family: system-ui, sans-serif;
 }
 
 .header {
@@ -15,6 +14,110 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+}
+
+.header .brand {
+  font-size: 2.25rem;
+  margin: 0;
+}
+
+.subtitle {
+  margin: 0;
+  color: #b3b3b3;
+}
+
+/* ---- Landing page ---- */
+
+.landing {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.landing-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.landing-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  width: calc(100vw - 32px);
+  text-align: center;
+  pointer-events: none; /* let the mouse reach the molds; the button turns it back on */
+}
+
+/* The molds draw the title, so the real text is invisible (but still read by screen readers) */
+.brand.landing-title {
+  display: inline-block;
+  font-size: clamp(3.5rem, 13vw, 6.5rem);
+  color: transparent;
+  text-shadow: none;
+}
+
+/* Zero-size marker the browser places on the title's text baseline (used to line up the molds) */
+.baseline-probe {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  vertical-align: baseline;
+}
+
+/* No animation (reduced motion, or it failed): show the plain text title */
+.brand.landing-title.static {
+  color: #1db954;
+  text-shadow: 0 0 24px rgba(29, 185, 84, 0.45);
+}
+
+.brand {
+  margin: 0;
+  font-size: clamp(2.75rem, 9vw, 4rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: #1db954;
+  text-shadow: 0 0 24px rgba(29, 185, 84, 0.45);
+}
+
+.tagline {
+  margin: 8px 0 24px;
+  color: #b3b3b3;
+  font-size: 1.15rem;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+
+.tagline.visible {
+  opacity: 1;
+}
+
+.login-button {
+  padding: 12px 32px;
+  border: none;
+  border-radius: 999px;
+  background: #1db954;
+  color: #000;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none; /* can't click it until it has appeared */
+  transition: opacity 700ms ease, transform 150ms ease, background 150ms ease;
+}
+
+.login-button.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.login-button:hover {
+  background: #1ed760;
+  transform: scale(1.04);
 }
 
 .button {
