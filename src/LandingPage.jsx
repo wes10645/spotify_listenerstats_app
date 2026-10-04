@@ -1,16 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import p5 from "p5";
 
+// How the intro plays:
+//   spread  -> molds burst out from the center, fast at first, then slowing to normal speed
+//   gather  -> molds fly to the edge of the Spotiboard card and trace its outline
+//   roam    -> the card fades in, molds burst off its edges and go back to normal slime behavior
+// Clicking "Log in with Spotify" still makes every mold swirl into the button before logging in.
+const SPREAD_MS = 900; // how long the burst lasts before molds start gathering
+const GATHER_MAX_MS = 1400; // show the card after this long even if not every mold has arrived
+
 export default function LandingPage({ onLogin }) {
   const sketchRef = useRef(null);
   const p5Ref = useRef(null);
+  const cardRef = useRef(null);
   const buttonRef = useRef(null);
   const btnXRef = useRef(0);
   const btnYRef = useRef(0);
   const convergingRef = useRef(false);
   const loginCalledRef = useRef(false);
   const [buttonVisible, setButtonVisible] = useState(true);
-  const [titleVisible, setTitleVisible] = useState(false);
+  const [cardVisible, setCardVisible] = useState(false);
 
   function handleButtonClick() {
     if (convergingRef.current) return;
@@ -34,14 +43,34 @@ export default function LandingPage({ onLogin }) {
   }
 
   useEffect(() => {
-    const t = window.setTimeout(() => setTitleVisible(true), 150);
+    // People who turn off animations in their OS settings get the card right away
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    // Safety net: show the card even if the animation can't run
+    const fallback = window.setTimeout(() => setCardVisible(true), reduceMotion ? 0 : 3000);
+
     const sketch = (p) => {
       let molds = [];
       const num = 8000;
       let d;
+      let phase = reduceMotion ? "roam" : "spread";
+      let phaseStart = 0;
+      let card = null; // { x, y, w, h } of the card, read from the page when gathering starts
+
+      // A random point on the card's outline, so molds spread evenly around its border
+      function pointOnCardEdge() {
+        const { x, y, w, h } = card;
+        let t = p.random(2 * (w + h));
+        if (t < w) return { x: x + t, y };
+        t -= w;
+        if (t < h) return { x: x + w, y: y + t };
+        t -= h;
+        if (t < w) return { x: x + w - t, y: y + h };
+        t -= w;
+        return { x, y: y + h - t };
+      }
 
       class Mold {
-        constructor(x, y) {
+        constructor(x, y, speed = 1) {
           this.x = x ?? p.random(p.width / 2 - 20, p.width / 2 + 20);
           this.y = y ?? p.random(p.height / 2 - 20, p.height / 2 + 20);
           this.r = 1.2;
@@ -54,7 +83,8 @@ export default function LandingPage({ onLogin }) {
           this.fSensorPos = p.createVector(0, 0);
           this.sensorAngle = 25;
           this.sensorDist = 20;
-          this.speed = 1;
+          this.speed = speed;
+          this.target = null; // where this mold sits on the card outline while gathering
         }
 
         update() {
@@ -81,12 +111,17 @@ export default function LandingPage({ onLogin }) {
               this.x = btnXRef.current;
               this.y = btnYRef.current;
             }
+          } else if (phase === "gather") {
+            // ease 10% of the remaining distance each frame, with a little wobble so it looks alive
+            this.x += (this.target.x - this.x) * 0.1 + p.random(-0.6, 0.6);
+            this.y += (this.target.y - this.y) * 0.1 + p.random(-0.6, 0.6);
           } else {
-            // normal behavior
+            // normal behavior; speed starts high during the burst and settles back to 1
+            this.speed = p.max(1, this.speed * 0.985);
             this.vx = p.cos(this.heading);
             this.vy = p.sin(this.heading);
-            this.x = (this.x + this.vx + p.width) % p.width;
-            this.y = (this.y + this.vy + p.height) % p.height;
+            this.x = (this.x + this.vx * this.speed + p.width) % p.width;
+            this.y = (this.y + this.vy * this.speed + p.height) % p.height;
 
             this.getSensorPos(this.rSensorPos, this.heading + this.sensorAngle);
             this.getSensorPos(this.lSensorPos, this.heading - this.sensorAngle);
@@ -157,16 +192,52 @@ export default function LandingPage({ onLogin }) {
         }
       }
 
+      function startGather() {
+        const rect = cardRef.current?.getBoundingClientRect();
+        if (!rect) return startRoam();
+        card = { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
+        for (const m of molds) m.target = pointOnCardEdge();
+        phase = "gather";
+        phaseStart = p.millis();
+      }
+
+      function startRoam() {
+        // burst off the card's edges, pointing away from its center
+        if (card) {
+          const cx = card.x + card.w / 2;
+          const cy = card.y + card.h / 2;
+          for (const m of molds) {
+            m.heading = p.degrees(p.atan2(m.y - cy, m.x - cx)) + p.random(-20, 20);
+            m.speed = p.random(2, 4);
+          }
+        }
+        phase = "roam";
+        setCardVisible(true);
+      }
+
       p.setup = () => {
         p.createCanvas(p.windowWidth, p.windowHeight);
         p.angleMode(p.DEGREES);
         d = p.pixelDensity();
-        for (let i = 0; i < num; i++) molds[i] = new Mold();
+        // during the burst, each mold starts 8-16x faster than normal, so they cover
+        // roughly 300-600px of screen before gathering starts
+        for (let i = 0; i < num; i++) molds[i] = new Mold(undefined, undefined, phase === "spread" ? p.random(8, 16) : 1);
+        phaseStart = p.millis();
       };
 
       p.draw = () => {
-        p.background(0, convergingRef.current ? 8 : 2);
-        if (!convergingRef.current) p.loadPixels();
+        // more fade while gathering so the card outline reads clearly; long trails otherwise
+        p.background(0, convergingRef.current ? 8 : phase === "gather" ? 24 : 2);
+        if (!convergingRef.current && phase !== "gather") p.loadPixels();
+
+        if (phase === "spread" && p.millis() - phaseStart > SPREAD_MS) {
+          startGather();
+        } else if (phase === "gather") {
+          const done = p.frameCount % 10 === 0 &&
+            molds.filter((m) => p.abs(m.target.x - m.x) + p.abs(m.target.y - m.y) < 6).length > molds.length * 0.8;
+          if (done || p.millis() - phaseStart > GATHER_MAX_MS) startRoam();
+        }
+
         for (let i = 0; i < molds.length; i++) {
           molds[i].update();
           molds[i].display();
@@ -213,7 +284,7 @@ export default function LandingPage({ onLogin }) {
       };
 
       p.mouseMoved = () => {
-        if (convergingRef.current) return;
+        if (convergingRef.current || phase !== "roam") return;
         for (let i = 0; i < 30; i++) {
           molds.push(
             new Mold(p.mouseX + p.random(-20, 20), p.mouseY + p.random(-20, 20))
@@ -223,7 +294,7 @@ export default function LandingPage({ onLogin }) {
       };
 
       p.mouseClicked = () => {
-        if (convergingRef.current) return;
+        if (convergingRef.current || phase !== "roam") return;
         for (let i = 0; i < 200; i++) {
           const m = new Mold(
             p.mouseX + p.random(-5, 5),
@@ -241,60 +312,19 @@ export default function LandingPage({ onLogin }) {
     const p5Instance = new p5(sketch, sketchRef.current);
     p5Ref.current = p5Instance;
     return () => {
-      window.clearTimeout(t);
+      window.clearTimeout(fallback);
       p5Instance.remove();
     };
   }, [onLogin]);
 
   return (
-    <div
-      style={{
-        position: "relative",
-        width: "100vw",
-        height: "100vh",
-        overflow: "hidden",
-      }}
-    >
-      <div ref={sketchRef} style={{ position: "absolute", top: 0, left: 0 }} />
-      <div
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          textAlign: "center",
-          zIndex: 10,
-        }}
-      >
-        <h1
-          style={{
-            color: "white",
-            fontSize: "2.5rem",
-            marginBottom: "1.5rem",
-            textShadow: "0 0 30px #1DB954",
-            fontFamily: "sans-serif",
-            opacity: titleVisible ? 1 : 0,
-            filter: titleVisible ? "drop-shadow(0 0 22px #1DB954)" : "none",
-            transition: "opacity 1200ms ease, filter 1200ms ease",
-          }}
-        >
-          Welcome to Wesley&apos;s Spotify Stat Visualizer!
-        </h1>
+    <div className="landing">
+      <div ref={sketchRef} className="landing-canvas" />
+      <div ref={cardRef} className={cardVisible ? "landing-card visible" : "landing-card"}>
+        <h1 className="brand">Spotiboard</h1>
+        <p className="tagline">Your Spotify listening, visualized.</p>
         {buttonVisible && (
-          <button
-            ref={buttonRef}
-            onClick={handleButtonClick}
-            style={{
-              backgroundColor: "#1DB954",
-              color: "black",
-              border: "none",
-              padding: "14px 36px",
-              borderRadius: "999px",
-              fontSize: "1rem",
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
-          >
+          <button ref={buttonRef} className="login-button" onClick={handleButtonClick}>
             Log in with Spotify
           </button>
         )}
@@ -302,4 +332,3 @@ export default function LandingPage({ onLogin }) {
     </div>
   );
 }
-

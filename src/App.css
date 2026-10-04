@@ -7,7 +7,6 @@ body {
   max-width: 960px;
   margin: 0 auto;
   padding: 24px 16px;
-  font-family: system-ui, sans-serif;
 }
 
 .header {
@@ -15,6 +14,90 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+}
+
+.header .brand {
+  font-size: 2.25rem;
+  margin: 0;
+}
+
+.subtitle {
+  margin: 0;
+  color: #b3b3b3;
+}
+
+/* ---- Landing page ---- */
+
+.landing {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.landing-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.landing-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.96);
+  z-index: 10;
+  width: min(440px, calc(100vw - 32px));
+  box-sizing: border-box;
+  padding: 40px 32px 36px;
+  text-align: center;
+  border: 1px solid rgba(29, 185, 84, 0.45);
+  border-radius: 28px;
+  background: rgba(8, 8, 8, 0.72);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0 60px rgba(29, 185, 84, 0.18);
+  opacity: 0;
+  pointer-events: none; /* can't click the button until the card has appeared */
+  transition: opacity 700ms ease, transform 700ms ease;
+}
+
+.landing-card.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.brand {
+  margin: 0;
+  font-size: clamp(2.75rem, 9vw, 4rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: #1db954;
+  text-shadow: 0 0 24px rgba(29, 185, 84, 0.45);
+}
+
+.tagline {
+  margin: 12px 0 28px;
+  color: #b3b3b3;
+  font-size: 1.1rem;
+}
+
+.login-button {
+  padding: 12px 32px;
+  border: none;
+  border-radius: 999px;
+  background: #1db954;
+  color: #000;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 150ms ease, background 150ms ease;
+}
+
+.login-button:hover {
+  background: #1ed760;
+  transform: scale(1.04);
 }
 
 .button {

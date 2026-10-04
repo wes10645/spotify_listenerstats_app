@@ -87,7 +87,10 @@ function App() {
   return (
     <div className="page">
       <header className="header">
-        <h1>{user?.name ? `${user.name}'s` : "Your"} Listening Stats</h1>
+        <div>
+          <h1 className="brand">Spotiboard</h1>
+          <p className="subtitle">{user?.name ? `${user.name}'s listening stats` : "Your listening stats"}</p>
+        </div>
         <button className="button" onClick={handleLogout}>Log out</button>
       </header>
 
