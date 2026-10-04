@@ -1,6 +1,7 @@
 // Talks to our own backend (never to Spotify directly).
 // In development, package.json's "proxy" forwards /api/... to the backend on port 5001.
-export const BACKEND_URL = "http://127.0.0.1:5001";
+// When deployed, the backend lives on the same site, so links start with "/".
+export const BACKEND_URL = process.env.NODE_ENV === "development" ? "http://127.0.0.1:5001" : "";
 
 export class NotLoggedInError extends Error {}
 

@@ -2,7 +2,6 @@
 const crypto = require("crypto");
 
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || "f7ad09fd2de94e8cb33658dd53dafd3d";
-const REDIRECT_URI = process.env.REDIRECT_URI || "http://127.0.0.1:5001/auth/callback";
 const AUTH_ENDPOINT = "https://accounts.spotify.com/authorize";
 const TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token";
 const API_BASE = "https://api.spotify.com/v1";
@@ -16,11 +15,11 @@ function createPkcePair() {
   return { verifier, challenge };
 }
 
-function buildLoginUrl(challenge, state) {
+function buildLoginUrl(challenge, state, redirectUri) {
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
     response_type: "code",
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: redirectUri,
     scope: SCOPES.join(" "),
     code_challenge_method: "S256",
     code_challenge: challenge,
@@ -51,11 +50,11 @@ async function postToken(body) {
   return response.json();
 }
 
-async function exchangeCode(code, verifier) {
+async function exchangeCode(code, verifier, redirectUri) {
   const data = await postToken({
     grant_type: "authorization_code",
     code,
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: redirectUri,
     code_verifier: verifier,
   });
   return toTokens(data);

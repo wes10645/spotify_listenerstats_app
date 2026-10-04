@@ -55,4 +55,6 @@ npm start        # frontend on http://127.0.0.1:3000
 
 3. Open http://127.0.0.1:3000 (use 127.0.0.1, not localhost, so the login cookie is shared).
 
+Deploying on Vercel: set a `SESSION_SECRET` environment variable (any long random string), and add `https://<your-domain>/auth/callback` as a Redirect URI in the Spotify dashboard.
+
 Tests: `npm run test:server` (backend) and `npm test` (frontend).

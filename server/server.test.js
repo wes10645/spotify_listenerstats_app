@@ -4,6 +4,7 @@ const assert = require("node:assert");
 const { TtlCache } = require("./cache");
 const { countGenres, listensByHour } = require("./analytics");
 const { toTokens } = require("./spotify");
+const { seal, unseal } = require("./session");
 
 test("cache returns a stored value and counts hits and misses", () => {
   const cache = new TtlCache(1000);
@@ -44,4 +45,16 @@ test("toTokens keeps the old refresh token when Spotify doesn't send a new one",
   assert.strictEqual(tokens.accessToken, "new");
   assert.strictEqual(tokens.refreshToken, "old-refresh");
   assert.ok(tokens.expiresAt > Date.now());
+});
+
+test("sealed cookies decrypt back to the original data", () => {
+  const data = { accessToken: "a", refreshToken: "r", expiresAt: 123 };
+  assert.deepStrictEqual(unseal(seal(data)), data);
+});
+
+test("a tampered or missing cookie is rejected", () => {
+  const sealed = seal({ accessToken: "a" });
+  const tampered = sealed.slice(0, -2) + (sealed.endsWith("A") ? "BB" : "AA");
+  assert.strictEqual(unseal(tampered), null);
+  assert.strictEqual(unseal(undefined), null);
 });
