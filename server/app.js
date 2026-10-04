@@ -77,14 +77,17 @@ function readRange(req) {
 
 // Same user + same Spotify path within 5 minutes -> answer from the cache, no Spotify call.
 // The key uses a hash of the refresh token, so users never share cached data.
-async function cachedGet(req, path) {
+// We cache the *promise*, so two requests that arrive at the same moment (like top-artists
+// and genres on page load) share one Spotify call instead of both missing the cache.
+function cachedGet(req, path) {
   const user = crypto.createHash("sha256").update(req.session.refreshToken || "").digest("hex");
   const key = `${user}:${path}`;
   const cached = cache.get(key);
   if (cached) return cached;
-  const data = await spotifyGet(req.session, path);
-  cache.set(key, data);
-  return data;
+  const pending = spotifyGet(req.session, path);
+  cache.set(key, pending);
+  pending.catch(() => cache.delete(key)); // don't keep failures around
+  return pending;
 }
 
 // Wraps a route: sends the result as JSON, turns errors into JSON errors,

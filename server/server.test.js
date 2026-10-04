@@ -58,3 +58,10 @@ test("a tampered or missing cookie is rejected", () => {
   assert.strictEqual(unseal(tampered), null);
   assert.strictEqual(unseal(undefined), null);
 });
+
+test("cache can delete a key", () => {
+  const cache = new TtlCache(1000);
+  cache.set("a", 1);
+  cache.delete("a");
+  assert.strictEqual(cache.get("a"), undefined);
+});

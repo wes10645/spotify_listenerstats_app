@@ -23,6 +23,10 @@ class TtlCache {
     this.store.set(key, { value, expiresAt: Date.now() + this.ttlMs });
   }
 
+  delete(key) {
+    this.store.delete(key);
+  }
+
   stats() {
     const total = this.hits + this.misses;
     return {
