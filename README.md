@@ -40,7 +40,19 @@ Project Goal:
 The goal of this platform is to evolve beyond a simple dashboard into a scalable analytics engine capable of generating personalized listening insights and behavioral trend analysis on a macro level as well. 
 
 
-Clone the repository:
+Running locally:
 
-bash
-git clone https://github.com/yourusername/spotify-analytics-platform.git
+1. In the Spotify Developer Dashboard, add `http://127.0.0.1:5001/auth/callback` as a Redirect URI.
+2. Install and start both halves (two terminals):
+
+```bash
+git clone https://github.com/wes10645/spotify_listenerstats_app.git
+cd spotify_listenerstats_app
+npm install
+npm run server   # backend on http://127.0.0.1:5001
+npm start        # frontend on http://127.0.0.1:3000
+```
+
+3. Open http://127.0.0.1:3000 (use 127.0.0.1, not localhost, so the login cookie is shared).
+
+Tests: `npm run test:server` (backend) and `npm test` (frontend).
